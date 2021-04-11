@@ -105,9 +105,7 @@ class MovieDetail extends Component {
                         <Button onClick={this.submitReview}>Submit</Button>
                     </Form>
                 </Card.Body>
-
             </Card>
-
         )
     }
 }
