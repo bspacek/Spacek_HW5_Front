@@ -1,15 +1,55 @@
 import React, { Component } from 'react';
+import {connect} from 'react-redux';
 import { fetchMovie } from "../actions/movieActions";
 import { submitReview } from "../actions/reviewActions";
-import {connect} from 'react-redux';
-//import {Card, ListGroup, ListGroupItem } from 'react-bootstrap';
 import { BsStarFill } from 'react-icons/bs'
-import {FormLabel, Image} from 'react-bootstrap';
-//import { Form , Button , FormGroup , FormControl , Col } from 'react-bootstrap';
-import { ListGroup, ListGroupItem, Col, Form, FormGroup, FormControl, Button , Card , DropdownButton , Dropdown , FormGroupProps , Row} from 'react-bootstrap'
+import { Image, ListGroup, ListGroupItem, Form, Button , Card } from 'react-bootstrap'
 import noImage from "../image/NoImage.png"
 
 class MovieDetail extends Component {
+
+    constructor(props) {
+        super(props);
+        this.updateDetails = this.updateDetails.bind(this);
+        this.submitReview = this.submitReview.bind(this);
+
+        this.state = {
+            details:{
+                userReview: '',
+                rating: '',
+                title: '',
+            }
+        };
+    }
+
+    updateDetails(event){
+        let updateDetails = Object.assign({}, this.state.details);
+
+        updateDetails[event.target.id] = event.target.value;
+        console.log(event)
+        this.setState({
+            details: updateDetails
+        });
+    }
+
+    submitReview = async () => {
+        console.log("state", this.state);
+        if (!this.state.details.rating || !this.state.details.userReview) {
+            alert("You must enter a rating and a review!");
+            return;
+        }
+
+        const { dispatch } = this.props;
+        let response = await dispatch(
+            submitReview({
+                title: this.props.selectedMovie.title,
+                rating: this.state.details.rating,
+                userReview: this.state.details.userReview,
+                username: localStorage.getItem('username')
+            })
+        );
+        console.log('response', response)
+    };
 
 
     componentDidMount() {
@@ -19,91 +59,58 @@ class MovieDetail extends Component {
         }
     }
 
-    submitReview(title, rating, userReview) {
-        submitReview(title, rating, userReview);
-        this.props.selectedMovie = {
-            username: this.props.username,
-            rating: rating,
-            userReview: userReview
-        };
-    }
-
-
     render() {
-        const DetailInfo = () => {
-            if (!this.props.selectedMovie) {
-                return <div>Loading....</div>
-            }
 
-            return (
-                <Card>
-                    <Card.Header>Movie Detail</Card.Header>
-                    <Card.Body>
-                        <Image className="image" src={this.props.selectedMovie.imgUrl ? this.props.selectedMovie.imgURL : noImage} thumbnail />
-                    </Card.Body>
-                    <ListGroup>
-                        <ListGroupItem>{this.props.selectedMovie.title}</ListGroupItem>
-                        <ListGroupItem>
-                            {this.props.selectedMovie.actors.map((actor, i) =>
-                                <p key={i}>
-                                    <b>{actor.actorName}</b> {actor.characterName}
-                                </p>)}
-                        </ListGroupItem>
-                        <ListGroupItem><h4><BsStarFill/> {this.props.selectedMovie.avgRating}</h4></ListGroupItem>
-                    </ListGroup>
-                    <Card.Body>
-                        {this.props.selectedMovie.reviews.map((review, i) =>
-                            <p key={i}>
-                                <b>{review.username}</b>&nbsp; {review.userReview}
-                                &nbsp;  <BsStarFill /> {review.rating}
-                            </p>
-                        )}
-                    </Card.Body>
-                </Card>
-            )
+        if (!this.props.selectedMovie) {
+            return <div>Loading....</div>
         }
 
         return (
-            <div>
-                <DetailInfo currentMovie={this.props.selectedMovie} />
 
-                <Form>
-                    <Form.Group as={Row} controlId={"userReview"}>
-                        <Form.Label column sm={3}>Review</Form.Label>
-                        <Col sm={6}>
-                            <Form.Control type={"text"}
-                                          as={"textarea"}
-                                          placeholder={"Enter your review..."}
-                                          rows={5}
-                            />
-                        </Col>
-                    </Form.Group>
+            <Card>
+                <Card.Header>Movie Detail</Card.Header>
+                <Card.Body>
+                    <Image className="image" src={this.props.selectedMovie.imgURL ? this.props.selectedMovie.imgURL : noImage} thumbnail />
+                </Card.Body>
+                <ListGroup>
+                    <ListGroupItem>{this.props.selectedMovie.title}</ListGroupItem>
+                    <ListGroupItem>
+                        {this.props.selectedMovie.actors.map((actor, i) =>
+                            <p key={i}>
+                                <b>{actor.actorName}</b> {actor.characterName}
+                            </p>)}
+                    </ListGroupItem>
+                    <ListGroupItem><h4><BsStarFill/> {this.props.selectedMovie.avgRating}</h4></ListGroupItem>
+                </ListGroup>
+                <Card.Body>
+                    {this.props.selectedMovie.reviews.map((review, i) =>
+                        <p key={i}>
+                            <b>{review.username}</b>&nbsp; {review.userReview}
+                            &nbsp;  <BsStarFill /> {review.rating}
+                        </p>
+                    )}
+                </Card.Body>
 
-                    <Form.Group as={Row} controlId={"rating"}>
-                        <Form.Label column sm={3}>Rating</Form.Label>
-                        <Col sm={6}>
-                            <Form.Control type={"rating"} placeholder={"Select your rating."} as={"Select"}>
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                            </Form.Control>
-                        </Col>
-                    </Form.Group>
+                <Card.Body>
+                    <Form className='form-horizontal'>
+                        <Form.Group controlId="userReview">
+                            <Form.Label>Your Review</Form.Label>
+                            <Form.Control onChange={this.updateDetails} value={this.state.details.userReview} type="text" placeholder="Enter review" />
+                        </Form.Group>
 
-                    <Form.Group as={Row}>
-                        <Col md={12}>
-                            <Button variant={"primary"} onClick={this.submitReview}>Submit</Button>
-                        </Col>
-                    </Form.Group>
-                </Form>
-            </div>
+                        <Form.Group controlId="rating">
+                            <Form.Label>Rating</Form.Label>
+                            <Form.Control onChange={this.updateDetails} value={this.state.details.rating}  type="number" placeholder="Enter rating (1-5)" min="0" max="5" />
+                        </Form.Group>
+                        <Button onClick={this.submitReview}>Submit</Button>
+                    </Form>
+                </Card.Body>
+
+            </Card>
+
         )
     }
 }
-
-
 
 const mapStateToProps = state => {
     return {
@@ -112,3 +119,7 @@ const mapStateToProps = state => {
 }
 
 export default connect(mapStateToProps)(MovieDetail);
+
+
+
+
